@@ -1,7 +1,7 @@
 #include "base_timer.h"
 
 
-static idata uint16_t tick=0;
+static idata uint32_t tick=0;
 
 void baseTimerInit(){
 	TMOD &=0XF0;
@@ -21,10 +21,10 @@ void systemTickHandler() interrupt 1
 	
 	tick++;
 }
-uint16_t getTick(){
+uint32_t getTick(){
 	return tick;
 }
-void delay_ms(uint16_t xms){
-	uint16_t end_ms = tick+xms;
+void delay_ms(uint32_t xms){
+	uint32_t end_ms = tick+xms;
 	while(tick<end_ms);
 }

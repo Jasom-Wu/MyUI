@@ -11,10 +11,9 @@ void main(){
 	bsp_InitUart();
 	baseTimerInit();
 	MenuInit();
-	bsp_InitTM7705();			/* ³õÊ¼»¯ÅäÖÃTM7705 */
+	bsp_InitTM7705();
 	
 	while(1){
-//		taskShowRMS();
     taskMenuCore();
 		
 //		float volt = getRMS(128);
@@ -24,7 +23,6 @@ void main(){
 //		OLED_ShowStr(2,3,2,"ADC:%6d",adc);
 //		if(getTick()-tick>=1000)break;
 	}
-//	OLED_Fill(0,1,4);
-//	OLED_ShowStr(2,1,2,"FPS:%d",adc_count);
+
 	
 }	
