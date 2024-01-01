@@ -1,0 +1,4 @@
+**/.idea/
+Project/*
+!Project/*.uvproj
+!Project/STARTUP.A51
