@@ -24,6 +24,8 @@ idata struct {
 
 static bdata bit app_init_flag=0;
 static bdata bit app_delete_flag=0;
+
+
 static void ShowRMSFunc(void *_data);
 
 static void ChangeGainFunc(void *_data);
@@ -54,7 +56,7 @@ static void OLED_ShowStrCenterAligned(const char *str,uint8_t y){
   len = strlen(str)*6;//居中算法
   if(SCREEN_WIDTH>=len)
     x_padding = (SCREEN_WIDTH - len)/2;
-  OLED_ShowStr(x_padding,y,1,str);
+  OLED_ShowStr(x_padding,y,str);
 }
 static void pageJumper(void *tar_page) {
   Page_Typedef *new_page = (Page_Typedef *) tar_page;
@@ -74,7 +76,7 @@ static void pageJumper(void *tar_page) {
     for(i =1;i<8;i++){
       if(pt==NULL)
         break;
-      OLED_ShowStr(8,i,1,pt->desc);
+      OLED_ShowStr(8,i,pt->desc);
 			pt = pt->next_item;
     }
     index_y = 0;
@@ -83,11 +85,6 @@ static void pageJumper(void *tar_page) {
 
 void MenuInit(void) {
   oledInit();
-  OLED_ShowStr(16, 1, 1, "JASOM-WU");
-  OLED_ShowStr(10, 2, 1, "2023.11.25");
-  delay_ms(500);
-  OLED_CLS(0);
-
   pageInit(&page_Main, "MAIN", &item_ShowRMS);
   itemInit(&item_ShowRMS, "ShowRMS", ShowRMSFunc, NULL);
   itemInit(&item_ChangeGain, "ChangeGain", ChangeGainFunc, NULL);
@@ -150,35 +147,40 @@ void MenuProcessHandler() {
         OLED_CLS(0);
         running_func = cur_item->func;
         app_init_flag = 1;//用于app启动时初始化代码块
+				running_func(cur_item->userdata);//立即回调app以执行app初始化代码块
+				app_init_flag = 0;//复位app初始化标志
       }
     }
   } else if (mykeys.enter == LONG_PRESSED) {
     if(cur_page){
       if(running_func == NULL)
         pageJumper(cur_page->last_page);
-      else{
+      else {
+				app_delete_flag = 1;//用于app删除后的回调代码块
+				running_func(cur_item->userdata);//立即回调app以执行app删除回调代码块
+				app_delete_flag = 0;
         pageJumper(cur_page);
-        app_delete_flag = 1;//用于app删除后的回调代码块
       }
-
     }
   }
-  if (mykeys.left == CLICKED) {
-    Item_Typedef * pt = cur_page->first_item;
-    while (pt) {
-      if ((cur_item != cur_page->first_item && pt->next_item == cur_item) ||
-          (cur_item == cur_page->first_item && pt->next_item == NULL))
-        break;
-      pt = pt->next_item;
+  if(running_func == NULL){//函数为空时才允许游标检索
+    if (mykeys.left == CLICKED) {
+      Item_Typedef * pt = cur_page->first_item;
+      while (pt) {
+        if ((cur_item != cur_page->first_item && pt->next_item == cur_item) ||
+            (cur_item == cur_page->first_item && pt->next_item == NULL))
+          break;
+        pt = pt->next_item;
+      }
+      cur_item = pt;
     }
-    cur_item = pt;
-  }
-  if (mykeys.right == CLICKED) {
-    if (cur_item) {
-      if (cur_item->next_item == NULL)
-        cur_item = cur_page->first_item;
-      else
-        cur_item = cur_item->next_item;
+    if (mykeys.right == CLICKED) {
+      if (cur_item) {
+        if (cur_item->next_item == NULL)
+          cur_item = cur_page->first_item;
+        else
+          cur_item = cur_item->next_item;
+      }
     }
   }
   if (running_func) {
@@ -197,6 +199,7 @@ void MenuProcessHandler() {
   if(mykeys.left!=PRESSING)mykeys.left = NONE;
 }
 
+static idata uint8_t PGA_Gain=1;
 //Appliance↓
 static void ShowRMSFunc(void *_data) {
   static uint8_t ticks=0;
@@ -204,17 +207,37 @@ static void ShowRMSFunc(void *_data) {
   if(app_init_flag==1){
     app_init_flag = 0;
     OLED_ShowStrCenterAligned(item_ShowRMS.desc,0);
+		PGA_Gain = getGain();
+		return;
   }
   if(++ticks*TASK_MENU_CORE_MS_PER_TICK>=200){
 		uint16_t adc;
-		adc = TM7705_ReadAdc(2);
-    volt = getRMS(256);
-    OLED_ShowStr(30,3,1,"%6.1fmV",volt);
+		adc = TM7705_ReadAdc();
+    volt = getRMS(256,PGA_Gain);
+    OLED_ShowStr(30,3, "%6.1fmV",volt);
     ticks = 0;
   }
 }
 
 static void ChangeGainFunc(void *_data) {
+  if(app_init_flag==1){
+    app_init_flag = 0;
+    OLED_ShowStrCenterAligned(item_ChangeGain.desc,0);
+    PGA_Gain = getGain();
+    OLED_ShowStr(42,3, "X %3bu",(uint8_t)(0x01<<PGA_Gain));
+		return;
+  }
+  if (mykeys.left == CLICKED) {
+		PGA_Gain = PGA_Gain==0?7:PGA_Gain-1;
+		OLED_ShowStr(54,3, "%3bu",(uint8_t)(0x01<<PGA_Gain));
+  }
+  if (mykeys.right == CLICKED) {
+		PGA_Gain = PGA_Gain==7?0:PGA_Gain+1;
+		OLED_ShowStr(54,3, "%3bu",(uint8_t)(0x01<<PGA_Gain));
+  }
+	if(app_delete_flag==1){
+		setGain(PGA_Gain);
+	}
 
 }
 

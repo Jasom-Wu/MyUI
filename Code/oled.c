@@ -4,7 +4,7 @@
 #include "codetab.h"
 
 
-char DisplayBuffer[BUFFERSIZE];
+idata char DisplayBuffer[BUFFERSIZE];
 int OLED_SEND_Cmd(uint8_t cmd)//Ð´²Ù×÷²»Í¬Éè±¸²»Ò»Ñù,ËùÒÔÒª×Ô¼º¶¨Òå
 {
 	i2c_Start();
@@ -81,51 +81,25 @@ void oledInit(void)
 	*					ch[] :- ÒªÏÔÊ¾µÄ×Ö·û´®; 
 	*					TextSize : ×Ö·û´óÐ¡(1:6*8 ; 2:8*16)
   */
-int OLED_ShowStr(unsigned char x, unsigned char y,unsigned char TextSize, char *formatString,...)
+int OLED_ShowStr(unsigned char x, unsigned char y, char *formatString,...)
 {
 	int c = 0,i = 0,j = 0,length;
 	va_list args;
 	va_start(args,formatString);
 	length = vsprintf(DisplayBuffer,formatString,args);
-	switch(TextSize)
+	while(DisplayBuffer[j] != '\0')
 	{
-		case 1:
+		c = DisplayBuffer[j] - 32;
+		if(x > 126)
 		{
-			while(DisplayBuffer[j] != '\0')
-			{
-				c = DisplayBuffer[j] - 32;
-				if(x > 126)
-				{
-					x = 0;
-					y++;
-				}
-				OLED_SetPos(x,y);
-				for(i=0;i<6;i++)
-					OLED_SEND_Data(F6x8[c][i]);
-				x += 6;
-				j++;
-			}
-		}break;
-		case 2:
-		{
-			while(DisplayBuffer[j] != '\0')
-			{
-				c = DisplayBuffer[j] - 32;
-				if(x > 120)
-				{
-					x = 0;
-					y++;
-				}
-				OLED_SetPos(x,y);
-				for(i=0;i<8;i++)
-					OLED_SEND_Data(F8X16[c*16+i]);
-				OLED_SetPos(x,y+1);
-				for(i=0;i<8;i++)
-					OLED_SEND_Data(F8X16[c*16+i+8]);
-				x += 8;
-				j++;
-			}
-		}break;
+			x = 0;
+			y++;
+		}
+		OLED_SetPos(x,y);
+		for(i=0;i<6;i++)
+			OLED_SEND_Data(F6x8[c][i]);
+		x += 6;
+		j++;
 	}
 	va_end(args);
 	return length;
@@ -162,9 +136,9 @@ void OLED_Fill(unsigned char fill_Data,unsigned char begin,unsigned char end)//°
 		OLED_SEND_Cmd(0x00);		//low column start address
 		OLED_SEND_Cmd(0x10);		//high column start address
 		for(n=0;n<128;n++)
-			{
-				OLED_SEND_Data(fill_Data);
-			}
+		{
+			OLED_SEND_Data(fill_Data);
+		}
 	}
 }
 void OLED_SetPos(unsigned char x, unsigned char y) //ÉèÖÃÆðÊ¼µã×ø±ê

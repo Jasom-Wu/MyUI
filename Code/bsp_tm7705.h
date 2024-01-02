@@ -5,8 +5,10 @@
 #include "math.h"
 
 void bsp_InitTM7705(void);
-void TM7705_CalibSelf(uint8_t _ch);
-uint16_t TM7705_ReadAdc(uint8_t _ch);
-float getRMS(uint16_t len);
+void TM7705_CalibSelf(void);
+uint16_t TM7705_ReadAdc(void);
+void setGain(uint8_t gain);
+uint8_t getGain(void);
+float getRMS(uint16_t len,uint8_t gain);
 
 #endif

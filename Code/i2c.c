@@ -4,20 +4,6 @@ sbit BUS_SCL = P2^0;
 sbit BUS_SDA = P2^1;
 
 #define i2c_Delay() ;//对于51来说可以不延迟
-//=====================以下是I2C的具体动作===================
-//static void i2c_Delay(void)
-//{
-//	uint8_t i;
-
-//	/*　
-//	 	下面的时间是通过逻辑分析仪测试得到的。
-//    工作条件：CPU主频72MHz ，MDK编译环境，1级优化
-//  
-//		循环次数为10时，SCL频率 = 205KHz 
-//		循环次数为7时，SCL频率 = 347KHz， SCL高电平时间1.5us，SCL低电平时间2.87us 
-//	 	循环次数为5时，SCL频率 = 421KHz， SCL高电平时间1.25us，SCL低电平时间2.375us 
-//	*/
-//}
 
 void i2c_Start()
 {

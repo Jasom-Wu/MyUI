@@ -1,5 +1,5 @@
 #include "bsp_tm7705.h"
-
+#include "base_timer.h"
 
 /* 通道1和通道2的增益,输入缓冲，极性 */
 #define __CH1_GAIN_BIPOLAR_BUF	(GAIN_1 | UNIPOLAR | BUF_EN)
@@ -113,9 +113,9 @@ static void TM7705_WriteByte(uint8_t _data);
 static uint16_t TM7705_Read2Byte(void);
 static void TM7705_WaitDRDY(void);
 static void TM7705_ResetHard(void);
-static void bsp_DelayMS(uint16_t n);
 
 #define TM7705_Delay() ;
+#define bsp_DelayMS(x) delay_ms(x);
 /*
 *	函 数 名: bsp_InitTM7705
 *	功能说明: 配置STM32的GPIO和SPI接口，用于连接 TM7705
@@ -124,7 +124,6 @@ static void bsp_DelayMS(uint16_t n);
 */
 void bsp_InitTM7705(void)
 {
-	bsp_DelayMS(10);
 
 	TM7705_ResetHard();		/* 硬件复位 */
 
@@ -145,21 +144,10 @@ void bsp_InitTM7705(void)
 	//TM7705_WriteByte(CLKDIS_0 | CLK_4_9152M | FS_500HZ);	/* 刷新速率500Hz */
 
 	/* 每次上电进行一次自校准 */
-	TM7705_CalibSelf(2);	/* 内部自校准 CH1 */
+	TM7705_CalibSelf();	/* 内部自校准 CH1 */
 	bsp_DelayMS(5);
 }
-static void bsp_DelayMS(uint16_t n)
-{
-	/* 
-	   以下代码，已经通过逻辑分析验证。	bsp_DelayMS(500) 时，实际延迟498ms 
-	*/
-	uint16_t k;
 
-	while(n--)
-	{
-		for (k = 0; k < 75; k++);
-	}
-}
 /*
 *	函 数 名: TM7705_ResetHard
 *	功能说明: 硬件复位 TM7705芯片
@@ -307,78 +295,60 @@ static void TM7705_WaitDRDY(void)
 *	函 数 名: TM7705_CalibSelf
 *	功能说明: 启动自校准. 内部自动短接AIN+ AIN-校准0位，内部短接到Vref 校准满位。此函数执行过程较长，
 *			  实测约 180ms
-*	形    参:  _ch : ADC通道，1或2
 *	返 回 值: 无
 */
-void TM7705_CalibSelf(uint8_t _ch)
-{
-	if (_ch == 1)
-	{
-		/* 自校准CH1 */
-		TM7705_WriteByte(REG_SETUP | WRITE | CH_1);	/* 写通信寄存器，下一步是写设置寄存器，通道1 */
-		TM7705_WriteByte(MD_CAL_SELF | __CH1_GAIN_BIPOLAR_BUF | FSYNC_0);/* 启动自校准 */
-		TM7705_WaitDRDY();	/* 等待内部操作完成 --- 时间较长，约180ms */
-	}
-	else if (_ch == 2)
-	{
-		/* 自校准CH2 */
-		TM7705_WriteByte(REG_SETUP | WRITE | CH_2);	/* 写通信寄存器，下一步是写设置寄存器，通道2 */
-		TM7705_WriteByte(MD_CAL_SELF | __CH2_GAIN_BIPOLAR_BUF | FSYNC_0);	/* 启动自校准 */
-		TM7705_WaitDRDY();	/* 等待内部操作完成  --- 时间较长，约180ms */
-	}
+void TM7705_CalibSelf(void){
+	/* 自校准CH2 */
+	TM7705_WriteByte(REG_SETUP | WRITE | CH_2);	/* 写通信寄存器，下一步是写设置寄存器，通道2 */
+	TM7705_WriteByte(MD_CAL_SELF | __CH2_GAIN_BIPOLAR_BUF | FSYNC_0);	/* 启动自校准 */
+	TM7705_WaitDRDY();	/* 等待内部操作完成  --- 时间较长，约180ms */
 }
 
 
 /*
-*	函 数 名: TM7705_ReadAdc1
-*	功能说明: 读通道1或2的ADC数据
+*	函 数 名: TM7705_ReadAdc
+*	功能说明: 读通道2的ADC数据
 *	形    参: 无
 *	返 回 值: 无
 */
-uint16_t TM7705_ReadAdc(uint8_t _ch)
+uint16_t TM7705_ReadAdc()
 {
-	uint8_t i;
-	uint16_t read = 0;
-
-	/* 为了避免通道切换造成读数失效，读2次 */
-	for (i = 0; i < 1; i++)
-	{
-		TM7705_WaitDRDY();		/* 等待DRDY口线为0 */
-
-		if (_ch == 1)
-		{
-			TM7705_WriteByte(0x38);
-		}
-		else if (_ch == 2)
-		{
-			TM7705_WriteByte(0x39);
-		}
-		read = TM7705_Read2Byte();
-	}
-	return read;
+	TM7705_WaitDRDY();		/* 等待DRDY口线为0 */
+	TM7705_WriteByte(0x39);
+	return TM7705_Read2Byte();
+}
+#include "base_timer.h"
+#include "oled.h"
+void setGain(uint8_t gain){
+  TM7705_WriteByte(0x11);//写设置寄存器,通道2
+	TM7705_WriteByte(0x06|(gain<<3));//00xxx110;
+	TM7705_WaitDRDY();
 }
 
-float getRMS(uint16_t len){
+uint8_t getGain(void){
+  uint8_t gain;
+  TM7705_WaitDRDY();
+  TM7705_WriteByte(0x19);//读取设置寄存器,通道2
+  CS_0();
+  gain = TM7705_Recive8Bit();
+  CS_1();
+  gain = (gain>>3) & 0x07;//截取gain
+  return gain;
+}
+
+
+float getRMS(uint16_t len,uint8_t gain){
   float volt_sum=0;
   float RMS=0,volt;
   uint16_t i;
 	int16_t adc;
-	uint8_t gain;
   i=len;
-	
-	TM7705_WaitDRDY();		
-	TM7705_WriteByte(0x19);//读取设置寄存器
-	CS_0();
-	gain = TM7705_Recive8Bit();
-	CS_1();
-	gain = 1<<((gain>>3) & 0x07);//截取gain
-	
   if(len>0){
     while(i){
-      adc = TM7705_ReadAdc(2);
+      adc = TM7705_ReadAdc();
       if(adc==3583)//概率性出现固定错误adc值，需要复位
 				{bsp_InitTM7705();continue;}
-      volt = ((float)adc*5/gain/65536)*2;//单位换算
+      volt = ((float)adc*5/(1<<gain)/65536)*2;//单位换算
       volt_sum += volt*volt;
       i--;
     }
