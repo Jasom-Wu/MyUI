@@ -22,8 +22,8 @@ idata struct {
     uint32_t enter_last_tick;
 }mykeys = {0};
 
-static bdata bit ui_init_flag=0;
-
+static bdata bit app_init_flag=0;
+static bdata bit app_delete_flag=0;
 static void ShowRMSFunc(void *_data);
 
 static void ChangeGainFunc(void *_data);
@@ -149,15 +149,18 @@ void MenuProcessHandler() {
       if(running_func == NULL){
         OLED_CLS(0);
         running_func = cur_item->func;
-        ui_init_flag = 1;//用于ui启动时初始化
+        app_init_flag = 1;//用于app启动时初始化代码块
       }
     }
   } else if (mykeys.enter == LONG_PRESSED) {
     if(cur_page){
       if(running_func == NULL)
         pageJumper(cur_page->last_page);
-      else
+      else{
         pageJumper(cur_page);
+        app_delete_flag = 1;//用于app删除后的回调代码块
+      }
+
     }
   }
   if (mykeys.left == CLICKED) {
@@ -198,11 +201,13 @@ void MenuProcessHandler() {
 static void ShowRMSFunc(void *_data) {
   static uint8_t ticks=0;
   float volt;
-  if(ui_init_flag==1){
-    ui_init_flag = 0;
+  if(app_init_flag==1){
+    app_init_flag = 0;
     OLED_ShowStrCenterAligned(item_ShowRMS.desc,0);
   }
   if(++ticks*TASK_MENU_CORE_MS_PER_TICK>=200){
+		uint16_t adc;
+		adc = TM7705_ReadAdc(2);
     volt = getRMS(256);
     OLED_ShowStr(30,3,1,"%6.1fmV",volt);
     ticks = 0;

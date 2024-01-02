@@ -1,17 +1,18 @@
 #include "bsp_tm7705.h"
 
+
 /* 通道1和通道2的增益,输入缓冲，极性 */
 #define __CH1_GAIN_BIPOLAR_BUF	(GAIN_1 | UNIPOLAR | BUF_EN)
 #define __CH2_GAIN_BIPOLAR_BUF	(GAIN_1 | UNIPOLAR | BUF_EN)
 
 
 	/* 定义GPIO端口 */
-	sbit CS     = P0^0;
-	sbit RESET  = P0^1;
-	sbit DIN    = P0^2;
-	sbit SCK    = P0^3;
-	sbit DOUT   = P0^4;
-	sbit DRDY	= P0^5;
+	sbit CS     = P1^3;
+	sbit RESET  = P1^2;
+	sbit DIN    = P1^1;
+	sbit SCK    = P1^7;
+	sbit DOUT   = P1^6;
+	sbit DRDY		= P1^4;
 
 	/* 定义口线置0和置1的宏 */
 	#define CS_0()		CS = 0
@@ -288,7 +289,6 @@ static uint16_t TM7705_Read2Byte(void)
 static void TM7705_WaitDRDY(void)
 {
 	uint16_t i;
-
 	for (i = 0; i < 15000; i++)
 	{
 		if (DRDY_IS_LOW())
@@ -298,12 +298,7 @@ static void TM7705_WaitDRDY(void)
 	}
 	if (i >= 15000)
 	{
-//		printf("TM7705_WaitDRDY() 芯片应答超时 ...\r\n");		/* 调试语句. 用语排错 */
-
-//		printf("重新同步SPI接口时序\r\n");		/* 调试语句. 用语排错 */
-
 		TM7705_SyncSPI();		/* 同步SPI接口时序 */
-
 		bsp_DelayMS(5);
 	}
 }
@@ -358,29 +353,36 @@ uint16_t TM7705_ReadAdc(uint8_t _ch)
 		{
 			TM7705_WriteByte(0x39);
 		}
-
 		read = TM7705_Read2Byte();
 	}
 	return read;
 }
 
-
 float getRMS(uint16_t len){
   float volt_sum=0;
   float RMS=0,volt;
-  uint16_t adc,i;
+  uint16_t i;
+	int16_t adc;
+	uint8_t gain;
   i=len;
+	
+	TM7705_WaitDRDY();		
+	TM7705_WriteByte(0x19);//读取设置寄存器
+	CS_0();
+	gain = TM7705_Recive8Bit();
+	CS_1();
+	gain = 1<<((gain>>3) & 0x07);//截取gain
+	
   if(len>0){
     while(i){
       adc = TM7705_ReadAdc(2);
-      if(adc==3583){bsp_InitTM7705();continue;}//概率性出现固定错误adc值，需要复位
-      volt = (float)adc*1000/(13000*0.974);
+      if(adc==3583)//概率性出现固定错误adc值，需要复位
+				{bsp_InitTM7705();continue;}
+      volt = ((float)adc*5/gain/65536)*2;//单位换算
       volt_sum += volt*volt;
       i--;
     }
-    RMS = sqrt((float)(volt_sum/len));//单位换算以及校准
-    RMS -=1645;//减去偏置电压值
-    RMS *= 5;//乘上电压增益
+    RMS = sqrt((float)(volt_sum/len))*1000;//换算成mV
   }
   return RMS;
 }
