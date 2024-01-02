@@ -287,7 +287,7 @@ static uint16_t TM7705_Read2Byte(void)
 */
 static void TM7705_WaitDRDY(void)
 {
-	uint32_t i;
+	uint16_t i;
 
 	for (i = 0; i < 15000; i++)
 	{
@@ -364,4 +364,24 @@ uint16_t TM7705_ReadAdc(uint8_t _ch)
 	return read;
 }
 
+
+float getRMS(uint16_t len){
+  float volt_sum=0;
+  float RMS=0,volt;
+  uint16_t adc,i;
+  i=len;
+  if(len>0){
+    while(i){
+      adc = TM7705_ReadAdc(2);
+      if(adc==3583){bsp_InitTM7705();continue;}//概率性出现固定错误adc值，需要复位
+      volt = (float)adc*1000/(13000*0.974);
+      volt_sum += volt*volt;
+      i--;
+    }
+    RMS = sqrt((float)(volt_sum/len));//单位换算以及校准
+    RMS -=1645;//减去偏置电压值
+    RMS *= 5;//乘上电压增益
+  }
+  return RMS;
+}
 

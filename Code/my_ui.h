@@ -4,7 +4,7 @@
 #include "main.h"
 #include "oled.h"
 #include "base_timer.h"
-
+#include "bsp_task.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -21,7 +21,6 @@ typedef struct Item{
     ExecuteFunc func;
     void *userdata;
     struct Item *next_item;
-
 }Item_Typedef;
 typedef struct Page{
     char *title;
@@ -29,14 +28,6 @@ typedef struct Page{
     struct Page *last_page;
 }Page_Typedef;
 
-typedef struct KeysGroup {
-    uint8_t left: 2;
-    uint8_t enter: 2;
-    uint8_t right: 2;
-    uint32_t enter_last_tick;
-} KeysGroup_Typedef;
-
-extern KeysGroup_Typedef mykeys;
 
 void MenuInit(void);
 void MenuKeyHandler(void);
