@@ -317,8 +317,7 @@ uint16_t TM7705_ReadAdc()
 	TM7705_WriteByte(0x39);
 	return TM7705_Read2Byte();
 }
-#include "base_timer.h"
-#include "oled.h"
+
 void setGain(uint8_t gain){
   TM7705_WriteByte(0x11);//写设置寄存器,通道2
 	TM7705_WriteByte(0x06|(gain<<3));//00xxx110;
@@ -337,23 +336,31 @@ uint8_t getGain(void){
 }
 
 
-float getRMS(uint16_t len,uint8_t gain){
+float getRMS(uint16_t len,uint8_t gain,float *DC_volt){
   float volt_sum=0;
-  float RMS=0,volt;
+  float RMS=0,DC=0,volt;
   uint16_t i;
 	int16_t adc;
-  i=len;
+  i=len*2;
   if(len>0){
     while(i){
+			if(i==len){
+				DC = volt_sum/len;
+				volt_sum = 0;
+			}
       adc = TM7705_ReadAdc();
       if(adc==3583)//概率性出现固定错误adc值，需要复位
 				{bsp_InitTM7705();continue;}
       volt = ((float)adc*5/(1<<gain)/65536)*2;//单位换算
-      volt_sum += volt*volt;
+			if(i>len)
+				volt_sum += volt;
+			else
+				volt_sum += (volt-DC)*(volt-DC);
       i--;
     }
-    RMS = sqrt((float)(volt_sum/len))*1000;//换算成mV
+    RMS = sqrt((float)(volt_sum/(float)len))*1000;//换算成mV
   }
+	*DC_volt = DC*1000;
   return RMS;
 }
 

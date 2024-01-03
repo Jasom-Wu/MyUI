@@ -50,7 +50,7 @@ void oledInit(void)
 	OLED_SEND_Cmd(0xA8);  //设置驱动路数
 	OLED_SEND_Cmd(0X3F);  //默认0X3F(1/64) 
 	OLED_SEND_Cmd(0xD3);  //设置显示偏移
-	OLED_SEND_Cmd(0X00);  //默认为0
+	//OLED_SEND_Cmd(0X00);  //默认为0
 	OLED_SEND_Cmd(0x00); //设置显示位置—列低地址
 	OLED_SEND_Cmd(0x10); //设置显示位置—列高地址
 	OLED_SEND_Cmd(0x40);  //设置显示开始行 [5:0],行数.
@@ -72,7 +72,7 @@ void oledInit(void)
 	OLED_SEND_Cmd(0xA4);  //全局显示开启;bit0:1,开启;0,关闭;(白屏/黑屏)
 	OLED_SEND_Cmd(0xA6);  //设置显示方式;bit0:1,反相显示;0,正常显示              
 	OLED_SEND_Cmd(0xAF);  //开启显示 
-	OLED_CLS(0); //清屏函数
+	OLED_Fill(0x00,0,7); //清屏函数
 }
 
 /**
@@ -146,17 +146,4 @@ void OLED_SetPos(unsigned char x, unsigned char y) //设置起始点坐标
 	OLED_SEND_Cmd(0xb0+y);
 	OLED_SEND_Cmd(((x&0xf0)>>4)|0x10);
 	OLED_SEND_Cmd((x&0x0f)|0x01);
-}
-
-/**
-  * @brief  OLED_CLS，清屏,0全清，1清上面，2清下面
-  */
-void OLED_CLS(uint8_t mode)//清屏
-{
-	if(mode ==0)
-	OLED_Fill(0x00,0,7);
-	else if(mode ==1)
-	OLED_Fill(0x00,0,1);
-	else
-	OLED_Fill(0x00,2,7);
 }

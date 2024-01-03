@@ -10,7 +10,6 @@
 #define BUFFERSIZE 50
 
 void oledInit(void);
-void OLED_CLS(uint8_t mode);
 int OLED_ShowStr(unsigned char x, unsigned char y, char *formatString,...);
 void OLED_DrawBMP(unsigned char x0,unsigned char y0,unsigned char x1,unsigned char y1,unsigned char BMP[]);
 int OLED_SEND_Data(uint8_t _data);
