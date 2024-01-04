@@ -7,12 +7,13 @@
 
 
 	/* 定义GPIO端口 */
-	sbit CS     = P1^3;
-	sbit RESET  = P1^2;
-	sbit DIN    = P1^1;
-	sbit SCK    = P1^7;
+	sbit CS     = P1^1;
+	sbit DIN    = P1^2;
+	sbit DRDY		= P1^3;
+	sbit RESET  = P1^4;
+	sbit SCK    = P1^5;
 	sbit DOUT   = P1^6;
-	sbit DRDY		= P1^4;
+	
 
 	/* 定义口线置0和置1的宏 */
 	#define CS_0()		CS = 0
@@ -351,7 +352,7 @@ float getRMS(uint16_t len,uint8_t gain,float *DC_volt){
       adc = TM7705_ReadAdc();
       if(adc==3583)//概率性出现固定错误adc值，需要复位
 				{bsp_InitTM7705();continue;}
-      volt = ((float)adc*5/(1<<gain)/65536)*2;//单位换算
+      volt = ((float)adc*5.0/(1<<gain)/65536)*2;//单位换算
 			if(i>len)
 				volt_sum += volt;
 			else

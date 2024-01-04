@@ -5,7 +5,6 @@
 #include "bsp_task.h"
 #include "my_ui.h"
 
-
 void main(){
 	bsp_InitUart();
 	baseTimerInit();

@@ -4,9 +4,12 @@
 #include "bsp_uart.h"
 
 
-sbit KEY_LEFT = P3 ^ 1;
-sbit KEY_ENTER = P3 ^ 0;
-sbit KEY_RIGHT = P3 ^ 2;
+sbit KEY_LEFT = P2 ^ 4;
+sbit KEY_RIGHT = P2 ^ 5;
+sbit KEY_ENTER = P0 ^ 0;
+sbit KEY_LEFT_LOW = P2^2;
+sbit KEY_RIGHT_LOW = P2^7;
+sbit KEY_ENTER_LOW = P0^2;
 
 static idata Page_Typedef page_Main;
 static idata Item_Typedef item_ShowRMS, item_ChangeGain, item_About;
@@ -96,6 +99,7 @@ void MenuInit(void) {
 }
 void MenuKeyHandler() {
   KEY_LEFT = KEY_ENTER = KEY_RIGHT = 1;
+	KEY_LEFT_LOW = KEY_RIGHT_LOW = KEY_ENTER_LOW =  0;
   switch (mykeys.left) {
     case NONE: {
       if (KEY_LEFT == 0)
@@ -216,8 +220,8 @@ static void ShowRMSFunc(void *_data) {
 		float DC_volt;
 		adc = TM7705_ReadAdc();
     RMS = getRMS(256,PGA_Gain,&DC_volt);
-		OLED_ShowStr(24,2, "DC: %5.1fmV",DC_volt);
-    OLED_ShowStr(18,4, "RMS: %5.1fmV",RMS);
+		OLED_ShowStr(24,2, "DC: %6.1fmV",DC_volt);
+    OLED_ShowStr(18,4, "RMS: %6.1fmV",RMS);
 		UART_SendBuf((uint8_t *)&RMS,4);
     ticks = 0;
   }
@@ -230,11 +234,9 @@ static void ChangeGainFunc(void *_data) {
   }
   if (mykeys.left == CLICKED) {
 		PGA_Gain = PGA_Gain==0?7:PGA_Gain-1;
-		//OLED_ShowStr(54,3, "%3bu",(uint8_t)(0x01<<PGA_Gain));
   }
   if (mykeys.right == CLICKED) {
 		PGA_Gain = PGA_Gain==7?0:PGA_Gain+1;
-		//OLED_ShowStr(54,3, "%3bu",(uint8_t)(0x01<<PGA_Gain));
   }
 	OLED_ShowStr(42,3, "X %3bu",(uint8_t)(0x01<<PGA_Gain));
 	if(app_delete_flag==1){
@@ -246,7 +248,7 @@ static void ChangeGainFunc(void *_data) {
 static void AboutFunc(void *_data) {
 	if(app_init_flag==1){
     OLED_DrawBMP(49,2,79,6,BMP_AVATAR_32X30);
-		OLED_ShowStrCenterAligned("Author: Jasom-Wu",7);
+		OLED_ShowStrCenterAligned("Author:JasomWu",7);
 		return;
   }
 }
