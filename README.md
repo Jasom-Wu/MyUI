@@ -1,6 +1,9 @@
 # 简易·快速移植的小型指针菜单框架——MyUI
 
 ![](docs/main.png )
+<div align="center">
+   <img src="docs/main.png" >
+</div>
 
 **特点：**
 
