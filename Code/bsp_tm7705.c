@@ -342,26 +342,27 @@ float getRMS(uint16_t len,uint8_t gain,float *DC_volt){
   float RMS=0,DC=0,volt;
   uint16_t i;
 	int16_t adc;
+	//采样次数乘以二，一半用于均值采样，一半用于均值采样，先均值采样后RMS
   i=len*2;
   if(len>0){
     while(i){
-			if(i==len){
-				DC = volt_sum/len;
-				volt_sum = 0;
+			if(i==len){//即将开始RMS采样
+				DC = volt_sum/len;//计算出均值
+				volt_sum = 0;//记得置零！！
 			}
       adc = TM7705_ReadAdc();
       if(adc==3583)//概率性出现固定错误adc值，需要复位
 				{bsp_InitTM7705();continue;}
-      volt = ((float)adc*5.0/(1<<gain)/65536)*2;//单位换算
-			if(i>len)
+      volt = ((float)adc*5.0/(1<<gain)/65536)*2;//单位换算成实际电压（V）
+			if(i>len)//均值采样
 				volt_sum += volt;
-			else
+			else//利用先前采的均值作为被减去的偏置参数计算平方项
 				volt_sum += (volt-DC)*(volt-DC);
       i--;
     }
     RMS = sqrt((float)(volt_sum/(float)len))*1000;//换算成mV
   }
-	*DC_volt = DC*1000;
+	*DC_volt = DC*1000;//回传直流量
   return RMS;
 }
 
