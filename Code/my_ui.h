@@ -1,3 +1,11 @@
+/****************Copyright(c)***************
+
+	Copyright (c) 2023 Jasom-Wu
+	
+	All rights reserved.
+-------------------------------------------*/
+
+
 #ifndef _MY_UI_H_
 #define _MY_UI_H_
 
@@ -6,14 +14,15 @@
 #include "base_timer.h"
 #include "bsp_task.h"
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
+
 typedef enum{ //按键的四种状态
     NONE=0,				//无操作
     CLICKED,			//短按
     LONG_PRESSED,	//长按
     PRESSING			//正在按下
 }KeyState;
+
+
 typedef void (*ExecuteFunc)(void *);//活动回调函数的类型定义
 typedef struct Item{//一个Page页面下的元素结构体类型定义
     uint8_t id;			//编号，用于记录元素在page中的位置
