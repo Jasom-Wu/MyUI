@@ -1,4 +1,4 @@
-# 简易·快速移植的小型指针菜单框架——MyUI  
+# 简易·快速移植的小型链表菜单框架——MyUI  
 
 <div align="center">
    <img src="docs/main.png" >
